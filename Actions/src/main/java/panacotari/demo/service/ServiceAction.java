@@ -4,6 +4,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -38,13 +39,17 @@ public class ServiceAction {
         for (String currentActionName: listWithFirstFive) {
             listWithAllActions.addAll(getListWithPreaparedActionForDatabase(currentActionName));
         }
-        repositoryAction.insertInDataBase(listWithAllActions);
+        if(!listWithAllActions.isEmpty()) {
+            repositoryAction.insertInDataBase(listWithAllActions);
+        }
     }
 
 
     private List<String> getTopFive() throws InterruptedException {
         System.setProperty("webdriver.chrome.driver", "C:\\Users\\aimatei\\Downloads\\chromCorrectVersion\\chromedriver_win32 (2)\\chromedriver.exe");
-        webDriver = new ChromeDriver();
+        ChromeOptions options = new ChromeOptions();
+        options.setHeadless(true);
+        webDriver = new ChromeDriver(options);
         this.webDriver.get("https://finance.yahoo.com/most-active");
 //        WebElement elementOk = this.webDriver.findElement(By.xpath("//*[@id=\"consent\"]/div/div/div[3]/form/div/button[1]"));
         WebElement elementOk = this.webDriver.findElement(By.xpath("/html/body/div/div/div/form/div/button[2]"));
@@ -62,6 +67,7 @@ public class ServiceAction {
             listWihtFirstFive.add(this.webDriver.findElement(By.xpath("//*[@id=\"scr-res-table\"]/div[1]/table/tbody/tr[4]/td[1]")).getText());
             listWihtFirstFive.add(this.webDriver.findElement(By.xpath("//*[@id=\"scr-res-table\"]/div[1]/table/tbody/tr[5]/td[1]")).getText());
         }
+        System.out.println(listWihtFirstFive);
         webDriver.close();
         return listWihtFirstFive;
     }
@@ -85,6 +91,7 @@ public class ServiceAction {
                 action.setLow(details.get("3. low"));
                 action.setClose(details.get("4. close"));
                 action.setVolume(details.get("5. volume"));
+                System.out.println(action);
                 listWithAction.add(action);
             }
         }
@@ -92,14 +99,17 @@ public class ServiceAction {
     }
 
     private static boolean checkDateAction(String a) throws ParseException {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date current = simpleDateFormat.parse(a);
-        Date yesterDay = Date.from(Instant.now().minus(2, ChronoUnit.DAYS));
-        return current.after(yesterDay);
+        Date instantDateMinusOneMinute = Date.from(Instant.now()
+                .minus(1, ChronoUnit.MINUTES)
+                .minus(7,ChronoUnit.HOURS)
+                .minus(45,ChronoUnit.SECONDS));
+        return current.after(instantDateMinusOneMinute);
     }
 
     private String getUrlAfterReplace(String e) {
-        String urlForReplace = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=AAAA&interval=1min&outputsize=full&apikey=LT03AFB00U1IYSCG";
+        String urlForReplace = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=AAAA&interval=1min&outputsize=compact&apikey=LT03AFB00U1IYSCG";
         return urlForReplace.replace("AAAA", e);
     }
 }
