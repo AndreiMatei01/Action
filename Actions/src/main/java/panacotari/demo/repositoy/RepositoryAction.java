@@ -30,6 +30,7 @@ public class RepositoryAction {
                 preparedStatement.setString(7,action.getVolume());
             }
 
+
             @Override
             public int getBatchSize() {
                 return listWithActions.size();
